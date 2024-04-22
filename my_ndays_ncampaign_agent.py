@@ -31,9 +31,6 @@ class MyNDaysNCampaignsAgent(NDaysNCampaignsAgent):
 
             campaign_segment = campaign.target_segment
             initial_bid = budget_left / reach_left
-            #print("initial bid:", initial_bid)
-            #print("budget left:", budget_left)
-            #print("reach left", reach_left)
 
             days_left_alpha = 1 - (.05 * days_left) # more days left --> bid less
             percent_reach_left = (campaign.reach - self.get_cumulative_reach(campaign)) / campaign.reach
@@ -47,7 +44,7 @@ class MyNDaysNCampaignsAgent(NDaysNCampaignsAgent):
                 if len(segment) == 2:   segment_scalar = .9
                 else:                   segment_scalar = 1
 
-                bid_per_item = initial_bid * segment_scalar * quality_score_alpha * days_left_alpha * reach_alpha #*5
+                bid_per_item = initial_bid * segment_scalar * quality_score_alpha * days_left_alpha * reach_alpha #*10
 
                 bid_limit = budget_left
                 bid = Bid(self, segment, bid_per_item, bid_limit)
@@ -59,50 +56,33 @@ class MyNDaysNCampaignsAgent(NDaysNCampaignsAgent):
             bundles.add(bundle)
         return bundles
 
-        # bundles = set()
-        # print(self.get_current_day(), len(self.get_active_campaigns()))
-        # print("Quality score:", self.get_quality_score())
-        # for campaign in self.get_active_campaigns():
-        #     bids = set()
-        #     bid_per_item = max(0.1, (campaign.budget - self.get_cumulative_cost(campaign)) /
-        #                        (campaign.reach - self.get_cumulative_reach(campaign) + 0.0001))
-        #     total_limit = max(1.0, campaign.budget - self.get_cumulative_cost(campaign))
-        #     auction_item = campaign.target_segment
-        #     bid = Bid(self, auction_item, bid_per_item, total_limit)
-        #     bids.add(bid)
-        #     bundle = BidBundle(campaign_id=campaign.uid, limit=total_limit, bid_entries=bids)
-        #     bundles.add(bundle)
-        # return bundles
 
     def get_campaign_bids(self, campaigns_for_auction:  Set[Campaign]) -> Dict[Campaign, float]:
+        # reverse auction - lower bids win
         bids = {}
         for auction_campaign in campaigns_for_auction:
-            initial_bid = auction_campaign.reach
+            initial_bid = auction_campaign.reach * 0.1
 
             campaign_length = auction_campaign.end_day - auction_campaign.start_day # 0, 1, or 2
-            campaign_alpha = .033 * campaign_length + .9
+            campaign_alpha = 1 - .1 * campaign_length
 
-            if len(auction_campaign.target_segment) == 2:   specificity_alpha = 1
-            else:                                           specificity_alpha = 0.9
+            if len(auction_campaign.target_segment) == 2:   specificity_alpha = 0.8
+            else:                                           specificity_alpha = 1
 
-            issubset_scalar = 0.9
+            issubset_scalar = 1
             for my_campaign in self.get_active_campaigns():
                 my_target_segment = my_campaign.target_segment
                 auction_target_segment = auction_campaign.target_segment
                 if my_target_segment.issubset(auction_target_segment) or auction_target_segment.issubset(my_target_segment):
-                    issubset_scalar = 1
+                    issubset_scalar = 0.8
 
-            bid_value = initial_bid * campaign_alpha * specificity_alpha * issubset_scalar #*5
+            bid_value = initial_bid * campaign_alpha * specificity_alpha * issubset_scalar
             bid_value = self.clip_campaign_bid(auction_campaign, bid_value)
             bids[auction_campaign] = bid_value
 
         return bids
 
-        # bids = {}
-        # for campaign in campaigns_for_auction:
-        #     bid_value = campaign.reach * (random.random() * 0.9 + 0.1)
-        #     bids[campaign] = bid_value
-        # return bids
+
 
 if __name__ == "__main__":
     # Here's an opportunity to test offline against some TA agents. Just run this file to do so.
