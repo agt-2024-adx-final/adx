@@ -33,7 +33,7 @@ class NDaysNCampaignsAgent(ABC):
         return self.current_game
 
     def get_active_campaigns(self) -> Set[Campaign]:
-        filtered = [c for c in self.my_campaigns if c.start_day >= self.current_day and c.end_day <= self.current_day]
+        filtered = [c for c in self.my_campaigns if self.current_day >= c.start_day  and self.current_day <= c.end_day]
         return set(filtered)
 
     def get_cumulative_reach(self, campaign: Campaign) -> int:
