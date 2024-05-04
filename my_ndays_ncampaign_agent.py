@@ -8,29 +8,17 @@ import random
 class MyNDaysNCampaignsAgent(NDaysNCampaignsAgent):
 
     def __init__(self):
-        # TODO: fill this in (if necessary)
         super().__init__()
-        self.name = "__placeholder__"  # TODO: enter a name.
+        self.name = "__placeholder__"
 
     def on_new_game(self) -> None:
         pass
 
     def get_ad_bids(self) -> Set[BidBundle]:
         bundles = set()
-        #print(self.get_current_day(), len(self.get_active_campaigns()))
-        #print("Quality score:", self.get_quality_score())
 
         # Scales from 1 to x for how much we care about quality score.
         quality_score_alpha = 1 - (self.get_current_day() * 0.02) # fewer days left --> bid less
-        quality_score = self.get_quality_score()
-
-        # quality_score_alpha_2 seems to not actually be helping!
-        # if quality_score < 0.7:
-        #     quality_score_alpha_2 = 1.2
-        # elif quality_score < 0.5:
-        #     quality_score_alpha_2 = 2
-        # else:
-        #     quality_score_alpha_2 = 1
 
         for campaign in self.get_active_campaigns():
             bids = set()
@@ -61,7 +49,6 @@ class MyNDaysNCampaignsAgent(NDaysNCampaignsAgent):
 
                 bid_limit = budget_left
                 bid = Bid(self, segment, bid_per_item, bid_limit)
-                #print("bid per item:", bid_per_item)
                 bids.add(bid)
 
             campaign_limit = budget_left
@@ -88,22 +75,6 @@ class MyNDaysNCampaignsAgent(NDaysNCampaignsAgent):
                 auction_target_segment = auction_campaign.target_segment
                 if my_target_segment.issubset(auction_target_segment) or auction_target_segment.issubset(my_target_segment):
                     issubset_alpha = 0.8
-            # we pay less for (prefer) campaigns with similar market segments to our current campaigns
-            # this is how we (theoretically) corner the market
-
-            # alternative issubset_alpha calculator
-            # num_related = 0
-            # for my_campaign in self.get_active_campaigns():
-            #     my_target_segment = my_campaign.target_segment
-            #     auction_target_segment = auction_campaign.target_segment
-            #     if my_target_segment.issubset(auction_target_segment) or auction_target_segment.issubset(my_target_segment):
-            #         num_related += 1
-            # if len(self.get_active_campaigns()) == 0:
-            #     issubset_alpha = 1
-            # else:
-            #     issubset_alpha = 1 - 0.1 * (num_related / len(self.get_active_campaigns()))
-            #     # we pay less for (prefer) campaigns with similar market segments as larger percentages of our current campaigns
-            #     # this is how we (theoretically) corner the market
 
             bid_value = 0.4 * initial_bid * campaign_alpha * specificity_alpha * issubset_alpha
             bid_value = self.clip_campaign_bid(auction_campaign, bid_value)
